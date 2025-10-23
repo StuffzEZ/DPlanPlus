@@ -116,7 +116,7 @@ function generateURL() {
         if (appName && appURL) apps.push(`${encodeClean(appName)}|${encodeClean(appURL)}`);
     });
 
-    const url = new URL(window.location.origin + 'app'); // adjust your path
+    const url = new URL(window.location.origin + '/DPlanPlus/app'); // adjust your path
     if(name) url.searchParams.set('name', name);
     if(theme) url.searchParams.set('theme', theme);
     if(search) url.searchParams.set('search', search);
