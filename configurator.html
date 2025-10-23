@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DPlan+ | Configurator</title>
+<style>
+body {font-family:sans-serif; padding:20px; background:#f5f5f5;background:#202124;color:#e8eaed;}
+h1 {margin-bottom:20px;}
+label {display:block; margin:10px 0 4px;}
+input, select, textarea, button {width:100%; padding:8px; margin-bottom:12px; border-radius:4px; border:1px solid #ccc;}
+textarea {resize:vertical;}
+button {background:#4285f4; color:#fff; border:none; cursor:pointer;}
+button:hover {background:#3367d6;}
+.app-row {display:flex; gap:8px; margin-bottom:8px;}
+.app-row input {flex:1;}
+.add-btn {width:auto; margin-top:-8px;}
+.smolbtn {width: 30px;}
+</style>
+</head>
+<body>
+
+<h1>DPlan+ | Configurator</h1>
+
+<form id="configForm">
+    <label for="name">User Name</label>
+    <input type="text" id="name" placeholder="Enter your name">
+
+    <label for="theme">Theme</label>
+    <select id="theme">
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+    </select>
+
+    <label for="searchEngine">Default Search Engine</label>
+    <select id="searchEngine">
+        <option value="google">Google</option>
+        <option value="bing">Bing</option>
+        <option value="duckduckgo">DuckDuckGo</option>
+        <option value="brave">Brave</option>
+    </select>
+
+    <label for="feeds">RSS Feeds (comma-separated)</label>
+    <textarea id="feeds" rows="3" placeholder="https://example.com/rss, https://another.com/feed"></textarea>
+
+    <label>Apps / Shortcuts</label>
+    <div id="appsContainer"></div>
+    <button type="button" class="add-btn" onclick="addAppRow()">+ Add App</button>
+
+    <button type="button" onclick="generateURL()">Generate URL</button>
+</form>
+
+<label for="result">Generated URL</label>
+<textarea id="result" rows="3" readonly></textarea>
+
+<script>
+// ---------- Load query parameters ----------
+const params = new URLSearchParams(window.location.search);
+document.getElementById('name').value = params.get('name') || '';
+document.getElementById('theme').value = params.get('theme') || 'light';
+document.getElementById('searchEngine').value = params.get('search') || 'google';
+document.getElementById('feeds').value = params.get('feeds') || '';
+
+// Load apps
+let apps = [];
+if (params.get('apps')) {
+    apps = params.get('apps').split(',').map(app => {
+        const [name,url] = app.split('|');
+        return {name:name?.trim(), url:url?.trim()};
+    }).filter(a => a.name && a.url);
+}
+
+const appsContainer = document.getElementById('appsContainer');
+function addAppRow(name='', url='') {
+    const div = document.createElement('div');
+    div.className = 'app-row';
+    div.innerHTML = `
+        <input type="text" placeholder="App Name" value="${name}">
+        <input type="text" placeholder="App URL" value="${url}">
+        <button class="smolbtn" type="button" onclick="removeAppRow(this)">✖</button>
+    `;
+    appsContainer.appendChild(div);
+}
+
+function removeAppRow(btn) {
+    btn.parentElement.remove();
+}
+
+// Populate existing apps
+apps.forEach(app => addAppRow(app.name, app.url));
+
+// ---------- Generate URL ----------
+function encodeClean(str) {
+    // Basic encode
+    let encoded = encodeURIComponent(str.trim());
+    // Decode common separators for readability
+    encoded = encoded.replace(/%2C/g, ',')   // comma
+                     .replace(/%7C/g, '|')   // pipe
+                     .replace(/%3A/g, ':')   // colon
+                     .replace(/%2F/g, '/');  // slash
+    return encoded;
+}
+
+function generateURL() {
+    const name = encodeClean(document.getElementById('name').value);
+    const theme = encodeClean(document.getElementById('theme').value);
+    const search = encodeClean(document.getElementById('searchEngine').value);
+    const feeds = encodeClean(document.getElementById('feeds').value);
+
+    const appRows = document.querySelectorAll('#appsContainer .app-row');
+    const apps = [];
+    appRows.forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        const appName = inputs[0].value.trim();
+        const appURL = inputs[1].value.trim();
+        if (appName && appURL) apps.push(`${encodeClean(appName)}|${encodeClean(appURL)}`);
+    });
+
+    const url = new URL(window.location.origin + 'app'); // adjust your path
+    if(name) url.searchParams.set('name', name);
+    if(theme) url.searchParams.set('theme', theme);
+    if(search) url.searchParams.set('search', search);
+    if(apps.length) url.searchParams.set('apps', apps.join(','));
+    if(feeds) url.searchParams.set('feeds', feeds);
+
+    document.getElementById('result').value = url.toString();
+}
+
+</script>
+
+</body>
+</html>

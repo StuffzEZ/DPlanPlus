@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New Tab</title>
+
+<!-- ✅ Toastify CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+
+<style>
+* {margin:0;padding:0;box-sizing:border-box;}
+body {
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+    transition:background-color .3s,color .3s;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:20px;
+}
+body.light {background:#fff;color:#202124;}
+body.dark {background:#202124;color:#e8eaed;}
+
+.container {width:100%;max-width:600px;margin:0 auto;}
+.header {text-align:center;margin-top:15vh;margin-bottom:30px;}
+.greeting {font-size:2.5em;font-weight:400;margin-bottom:40px;}
+.search-container {width:100%;margin-bottom:30px;}
+.search-bar {
+    width:100%;
+    padding:14px 20px;
+    border:1px solid #dfe1e5;
+    border-radius:24px;
+    font-size:16px;
+    transition:box-shadow .2s,border-color .2s;
+}
+.light .search-bar {background:#fff;color:#202124;border-color:#dfe1e5;}
+.dark .search-bar {background:#303134;color:#e8eaed;border-color:#5f6368;}
+
+.shortcuts-container {
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(112px,1fr));
+    gap:0;
+    max-width:600px;
+    margin:0 auto 60px;
+}
+.shortcut {
+    display:flex;flex-direction:column;align-items:center;
+    padding:20px 8px;text-decoration:none;border-radius:8px;
+    transition:background-color .2s;cursor:pointer;
+}
+.light .shortcut {color:#202124;}
+.dark .shortcut {color:#e8eaed;}
+.light .shortcut:hover {background-color:rgba(0,0,0,.04);}
+.dark .shortcut:hover {background-color:rgba(255,255,255,.1);}
+.shortcut-icon {
+    width:48px;height:48px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:8px;font-size:24px;font-weight:500;
+}
+.light .shortcut-icon {background-color:#f1f3f4;color:#5f6368;}
+.dark .shortcut-icon {background-color:#3c4043;color:#9aa0a6;}
+.shortcut-name {font-size:13px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+.settings-btn {
+    position:fixed;bottom:20px;right:20px;width:40px;height:40px;
+    border-radius:50%;border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:background-color .2s;
+}
+.light .settings-btn {background-color:#fff;color:#5f6368;box-shadow:0 1px 3px rgba(0,0,0,.12);}
+.dark .settings-btn {background-color:#303134;color:#9aa0a6;box-shadow:0 1px 3px rgba(0,0,0,.5);}
+
+/* 📰 Feed styling */
+.feed-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+    max-width: 1100px;
+    margin: 30px auto 60px;
+    width: 100%;
+    padding: 0 20px;
+}
+.feed-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.feed-item {
+    border-radius: 12px;
+    padding: 18px;
+    transition: background-color .25s, transform .2s;
+}
+.light .feed-item {background:#f8f9fa;}
+.dark .feed-item {background:#303134;}
+.feed-item:hover {transform:translateY(-3px);}
+.feed-item h3 {
+    font-size:16px;
+    margin-bottom:6px;
+}
+.feed-item h3 a {
+    color:inherit;
+    text-decoration:none;
+}
+.feed-item h3 a:hover {text-decoration:underline;}
+.feed-meta {
+    font-size:12px;
+    opacity:0.7;
+    margin-bottom:6px;
+}
+.feed-desc {
+    font-size:13px;
+    opacity:0.8;
+    line-height:1.4;
+}
+
+/* Responsive tweak */
+@media (max-width: 400px) {
+    .feed-item {padding:14px;}
+}
+</style>
+</head>
+<body class="light">
+
+<div class="container">
+    <div class="header">
+        <h1 class="greeting">Hello, <span id="userName">there</span>.</h1>
+        <div class="search-container">
+            <input type="text" id="searchBar" class="search-bar" placeholder="Search the web">
+        </div>
+    </div>
+    <div id="shortcuts" class="shortcuts-container"></div>
+</div>
+
+<div id="feedContainer" class="feed-container"></div>
+
+<button class="settings-btn" onclick="goToSettings()">
+    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066
+        c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572
+        c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573
+        c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065
+        c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066
+        c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572
+        c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573
+        c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+    </svg>
+</button>
+
+<!-- ✅ Toastify JS -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+<script>
+let config = {
+    name: '',
+    theme: 'light',
+    searchEngine: 'google',
+    rssFeeds: [],
+    apps: []
+};
+
+const searchEngines = {
+    google: 'https://www.google.com/search?q=',
+    bing: 'https://www.bing.com/search?q=',
+    duckduckgo: 'https://duckduckgo.com/?q=',
+    brave: 'https://search.brave.com/search?q='
+};
+
+function parseURLParams() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('name')) config.name = params.get('name');
+    if (params.get('theme')) config.theme = params.get('theme');
+    if (params.get('search')) config.searchEngine = params.get('search');
+    if (params.get('feeds')) config.rssFeeds = params.get('feeds').split(',').filter(f => f.trim());
+    if (params.get('apps')) {
+        config.apps = params.get('apps').split(',').map(app => {
+            const [name, url] = app.split('|');
+            return { name: name?.trim(), url: url?.trim() };
+        }).filter(app => app.name && app.url);
+    }
+}
+
+function applyTheme() { document.body.className = config.theme; }
+function updateGreeting() { document.getElementById('userName').textContent = config.name || 'there'; }
+
+function getInitials(name) {
+    if (!name) return '?';
+    const words = name.trim().split(' ');
+    return words.length >= 2 ? (words[0][0] + words[words.length - 1][0]).toUpperCase() : name[0].toUpperCase();
+}
+
+function renderShortcuts() {
+    const container = document.getElementById('shortcuts');
+    if (!config.apps.length) return container.innerHTML = '';
+    container.innerHTML = config.apps.map(app => `
+        <a href="${app.url}" class="shortcut" target="_blank">
+            <div class="shortcut-icon">${getInitials(app.name)}</div>
+            <div class="shortcut-name">${app.name}</div>
+        </a>`).join('');
+}
+
+document.getElementById('searchBar').addEventListener('keypress', e => {
+    if (e.key === 'Enter') {
+        const q = e.target.value.trim();
+        if (q) window.location.href = searchEngines[config.searchEngine] + encodeURIComponent(q);
+    }
+});
+
+function goToSettings() {
+    const params = new URLSearchParams();
+    if (config.name) params.set('name', config.name);
+    if (config.theme) params.set('theme', config.theme);
+    if (config.searchEngine) params.set('search', config.searchEngine);
+    if (config.rssFeeds.length) params.set('feeds', config.rssFeeds.join(','));
+    if (config.apps.length) params.set('apps', config.apps.map(app => `${app.name}|${app.url}`).join(','));
+    window.location.href = `configurator?${params.toString()}`;
+}
+
+// ✅ Toastify Manager (bottom-left, limited to 3)
+const toastQueue = [];
+let activeToasts = 0;
+const MAX_TOASTS = 3;
+
+function showToast(message, type = "error") {
+    if (activeToasts >= MAX_TOASTS) {
+        toastQueue.push({ message, type });
+        return;
+    }
+
+    activeToasts++;
+
+    const isDark = document.body.classList.contains("dark");
+    const colors = {
+        error: isDark ? "#b3261e" : "#f28b82",
+        success: isDark ? "#188038" : "#34a853",
+        info: isDark ? "#1e88e5" : "#4285f4"
+    };
+    const icons = { error: "[ERROR]", success: "[SUCCESS]", info: "[INFO]" };
+    const bg = colors[type] || colors.error;
+    const icon = icons[type] || icons.error;
+
+    Toastify({
+        text: `${icon} ${message}`,
+        duration: 4000,
+        close: true,
+        gravity: "bottom",
+        position: "left",
+        stopOnFocus: true,
+        style: {
+            background: bg,
+            color: "#fff",
+            borderRadius: "8px",
+            fontSize: "14px",
+            padding: "10px 14px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+        },
+        callback: () => {
+            activeToasts--;
+            if (toastQueue.length > 0) {
+                const next = toastQueue.shift();
+                showToast(next.message, next.type);
+            }
+        }
+    }).showToast();
+}
+
+// 📰 Load RSS feeds with Toastify error handling
+async function loadRSSFeeds() {
+    const container = document.getElementById('feedContainer');
+    container.innerHTML = '';
+    if (!config.rssFeeds.length) return;
+
+    try {
+        const feedPromises = config.rssFeeds.map(async (feedUrl) => {
+            const rss2json = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`;
+            const res = await fetch(rss2json);
+            const data = await res.json();
+            if (data.status !== 'ok') throw new Error('Invalid response');
+
+            const blogName = data.feed.title || new URL(feedUrl).hostname;
+
+            data.items.slice(0, 3).forEach(item => {
+                const teaser = item.description
+                    ? item.description.replace(/<[^>]*>/g, '').split(' ').slice(0, 20).join(' ') + '...'
+                    : '';
+                const div = document.createElement('div');
+                div.className = 'feed-item';
+                div.innerHTML = `
+                    <h3><a href="${item.link}" target="_blank">${item.title}</a></h3>
+                    <div class="feed-meta">${blogName} | ${new Date(item.pubDate).toLocaleString()}</div>
+                    <div class="feed-desc">${teaser}</div>`;
+                container.appendChild(div);
+            });
+        });
+
+        await Promise.all(feedPromises);
+    } catch (err) {
+        console.error(err);
+        showToast(`Failed to load one or more feeds`, 'error');
+    }
+}
+
+function init() {
+    parseURLParams();
+    applyTheme();
+    updateGreeting();
+    renderShortcuts();
+    loadRSSFeeds();
+}
+
+init();
+</script>
+</body>
+</html>
